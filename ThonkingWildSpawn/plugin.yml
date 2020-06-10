@@ -1,0 +1,33 @@
+name: ThonkingWildSpawn
+author: Endermanbugzjfc
+api: [3.0.0, 3.12.0]
+version: 1.1.1
+main: Endermanbugzjfc\ThonkingWildSpawn\ThonkingWildSpawn
+socials: NO ;-;
+
+commands:
+  wildspawn:
+    permission: wildspawn.check
+    aliases: 
+      - randomspawn
+      - randspawn
+
+permissions:
+  wildspawn:
+    default: op
+    children:
+      wildspawn.check:
+        description: Permission for checking wild spawn info
+        default: op
+      wildspawn.mod:
+        description: Permission for modifying wild spawn settings
+        default: op
+
+#    ################    #
+#    # @@@          #    #
+#    #  @       @@@ #    #
+#    #           @  #    #
+#    #@@@  ####     #    #
+#    #@@@@@@@@      #    #
+#    #@@@@@@        #    #
+#    ################    #
