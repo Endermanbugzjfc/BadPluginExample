@@ -53,11 +53,12 @@ class GenerateBufferTask extends Task {
 		$w = $this->level;
 		$ws = $w->getSpawnLocation();
 		$td = false;
-		$to = 0;
+		$to = intval(intval(time()) + $this->timeout);
 
 		while (!$td) {
-			if (intval($to) => intval($this->timeout)) {
+			if (time() > $to) {
 				$this->main->setBuffer(new Pos($ws->getX(), $ws->getY(), $ws->getZ(), $w), false, $this);
+				return;
 			}
 			$x = rand(intval($this->distance[0] ?? -3000), intval($this->distance[1] ?? 350));
 	    	$z = rand(intval($this->distance[2] ?? -3000), intval($this->distance[3] ?? 350));
