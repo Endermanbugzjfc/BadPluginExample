@@ -75,6 +75,8 @@ use pocketmine\network\mcpe\protocol\{ActorEventPacket};
 use pocketmine\item\{Item};
 
 use Endermanbugzjfc\ThonkingWildSpawn\{GenerateBufferTask as GenBuffer};
+use dktapps\pmforms\{CustomForm,CustomFormResponse, MenuForm, MenuOption, FormIcon, ModalForm};
+use dktapps\pmforms\element\{Dropdown, Input, StepSlider, Toggle, Label};
 
 class ThonkingWildSpawn extends pm implements Listener {
 
@@ -121,7 +123,7 @@ class ThonkingWildSpawn extends pm implements Listener {
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
 		$w = $this->getServer()->getDefaultLevel();
 
-		$this->buffer[strval($w->getId())] = $this->generateBuffer($w);
+		$this->buffer[strval($w->getId())] = $this->getScheduler()->scheduleTask(new GenerateBufferTask($this, $w));
 		return;
 
 
@@ -209,7 +211,7 @@ class ThonkingWildSpawn extends pm implements Listener {
 		}
 		$form = (new MenuForm(
 			TF::BOLD . TF::AQUA . "Plugin " . TF::GREEN . "information" . TF::RESET,
-			TF::BOLD . TF::AQUA . "\nThonkingWildSpawn" . TF::RESET . TF::GREEN . "\nBy " . TF::LIGHT_PURPLE . "Enderman" . TF::GREEN . "bugzjfc\n" . TF::RESET . TF::DARK_RED . "\nYou" . TF::WHITE . "Tube: " . TF::BLUE . "\nhttps://www.youtube.com/channel/UCD4OW4HGfWcDpfTvqypyYUw?sub_confirmation=1\n" . TF::GOLD . "\nOmlet: " . TF::BLUE . "\nhttps://omlet.gg/profile/endermanbug_zjfc" . TF::GOLD . "\n\nA random spawn plugin for " . TF::DARK_AQUA . "PM" . TF::YELLOW . "3" . TF::DARK_GRAY . "\n(Tested compatibility on 3.12.3 Build 1798)\n\n" . TF::BOLD . TF::AQUA . "Used libraries / virions: \n" . TF::RESET . TF::WHITE . "- " . TF::GOLD . "PmForms by dktapps\n" . TF::WHITE . "- " . TF::GOLD . "Wildness by muqsit (Source code reference)\n\n" . TF::BOLD . TF::AQUA . "Update details: \n" . TF::RESET . TF::WHITE . "- " . TF::GOLD . "Version: 1.1.1\n" . TF::WHITE . "- " . TF::GOLD . "Optimized wildness teleportation system\n" . TF::WHITE . "- " . TF::GOLD . "Fixed first join tp malfunctioning and made it into a world option\n" . TF::WHITE . "- " . TF::GOLD . "Added first join totem animation option\n" . TF::WHITE . "- " . TF::GOLD . "Added teleportation popups\n" . TF::WHITE . "- " . TF::GOLD . "Fixed bugs\n" . TF::WHITE . "- " . TF::GOLD . "Bumped API to 3.12.3\n" . TF::WHITE . "- " . TF::GOLD . "Added teleportation distance options" . TF::RESET,
+			TF::BOLD . TF::AQUA . "\nThonkingWildSpawn" . TF::RESET . TF::GREEN . "\nBy " . TF::LIGHT_PURPLE . "Enderman" . TF::GREEN . "bugzjfc\n" . TF::RESET . TF::DARK_RED . "\nYou" . TF::WHITE . "Tube: " . TF::BLUE . "\nhttps://www.youtube.com/channel/UCD4OW4HGfWcDpfTvqypyYUw?sub_confirmation=1\n" . TF::GOLD . "\nOmlet: " . TF::BLUE . "\nhttps://omlet.gg/profile/endermanbug_zjfc" . TF::GOLD . "\n\nA random spawn plugin for " . TF::DARK_AQUA . "PM" . TF::YELLOW . "3" . TF::DARK_GRAY . "\n(Tested compatibility on 3.13.0 Build 1807)\n\n" . TF::BOLD . TF::AQUA . "Used libraries / virions: \n" . TF::RESET . TF::WHITE . "- " . TF::GOLD . "PmForms by dktapps\n" . TF::WHITE . "- " . TF::GOLD . "Wildness by muqsit (Source code reference)\n\n" . TF::BOLD . TF::AQUA . "Update details: \n" . TF::RESET . TF::WHITE . "- " . TF::GOLD . "Version: 1.2.0\n" . TF::WHITE . "- " . TF::GOLD . "Optimized wildness teleportation system\n" . TF::WHITE . "- " . TF::GOLD . "Fixed spawnpoint won't be randomize after bed breaks\n" . TF::WHITE . "- " . TF::GOLD . "Added API supports for 3.13.0\n" . TF::RESET,
 			[new MenuOption(TF::BOLD . TF::DARK_AQUA . "Done" . TF::RESET)],
 			function (Player $p, int $d): void {
 				$this->overviewForm($p);
@@ -363,6 +365,7 @@ class ThonkingWildSpawn extends pm implements Listener {
 	}
 
 	private function insertion(Player $p, string $t = "", Pos $f) {
+		$w = $p->getLevel();
 
 		$dfs = intval($f->distance($p->getLevel()->getSpawnLocation()->asVector3()));
 		$nbe = $w->getNearbyEntities(new BB(floatval(floatval($f->getX()) - 16), 0, floatval(floatval($f->getZ()) - 16), floatval(floatval($f->getX()) + 16), 300, floatval(floatval($f->getZ()) + 16)));
@@ -370,7 +373,7 @@ class ThonkingWildSpawn extends pm implements Listener {
 		foreach ($nbe as $i => $v) {
 			if ($nbe instanceof Player) $nba = intval(intval($nba) + 1);
 		}
-		$sob = $w->getBlockAt($f->getFloorX(), intval(intval($f->getFloorY) - 2), $f->getFloorZ());
+		$sob = $w->getBlockAt($f->getFloorX(), intval(intval($f->getFloorY()) - 2), $f->getFloorZ());
 
 		if (in_array($p->getName(), $this->newchunk)) {
 			$t = str_replace("{IS_CHUNK_NEW}", "Yes", $t);
@@ -466,7 +469,7 @@ class ThonkingWildSpawn extends pm implements Listener {
 		$es = explode(":", str_replace("：", ":", $es));
 		$es = [0 => intval($es[0]), 1 => intval($es[1]), 2 => intval($es[2])];
 		$es = implode(":", $es);
-		$b[1] = (new Label("tips", TF::AQUA . "Available insertion tags: \n{X}, {Z}, {PLAYER}, {WORLD}, {IS_CHUNK_NEW}" . TF::RESET));
+		$b[1] = (new Label("tips", TF::AQUA . "Available insertion tags: \n{X}, {Z}, {PLAYER}, {WORLD}, {IS_CHUNK_NEW}, {BIOME}, {NEARBY_PLAYERS}, {STANDING_ON}, {SPAWN_DISTANCE}, {PREFIX}" . TF::RESET));
 		$b[2] = (new Input("title", TF::BOLD . TF::GOLD . "Title text: " . TF::RESET, "Empty here to disable", strval($this->popup[0])));
 		$b[3] = (new Input("subtitle", TF::BOLD . TF::GOLD . "Subtitle text: " . TF::RESET, "Empty here to disable", strval($this->popup[1])));
 		$b[4] = (new Input("effect", TF::AQUA . "Title effects: " . TF::RESET, "\"Fade in\" : \"Stay\" : \"Fade out\"", strval($es)));
@@ -666,6 +669,295 @@ class ThonkingWildSpawn extends pm implements Listener {
 
 		$this->buffer[strval($f->getLevel()->getId())] = [$f, $icg];
 		return;
+	}
+
+	public function overviewForm(Player $p) {
+		if (!$p->hasPermission("wildspawn.check")) {
+			$p->sendMessage(TF::BOLD . TF::DARK_RED . "Action forbidden!\n\n" . TF::RED . "You are lacking the permission \"wildspawn.check\" to do this action." . TF::RESET);
+			return;
+		}
+		$b = [];
+		$wl = [];
+		$b[0] = (new MenuOption(TF::BOLD . TF::DARK_AQUA . "Plugin information" . TF::RESET, new FormIcon("https://i.imgur.com/Buqs4pY.png", FormIcon::IMAGE_TYPE_URL)));
+		$b[1] = (new MenuOption(TF::BOLD . TF::RED . "Exit WildSpawn\nsetting UI" . TF::RESET, new FormIcon("https://i.imgur.com/vk6IBgP.png", FormIcon::IMAGE_TYPE_URL)));
+		$b[2] = (new MenuOption(TF::BOLD . TF::BLUE . "Plugin\nglobal configures" . TF::RESET, new FormIcon("https://i.imgur.com/jA8AzQm.png", FormIcon::IMAGE_TYPE_URL)));
+		$b[3] = (new MenuOption(TF::BOLD . TF::DARK_GREEN . "Search world" . TF::RESET, new FormIcon("https://i.imgur.com/bjMQuxG.png", FormIcon::IMAGE_TYPE_URL)));
+		foreach (scandir($this->getServer()->getDataPath()."worlds") as $n) {
+			if ($n === "." || $n === "..");
+			else {
+				$w = $this->getServer()->getLevelByName($n);
+				if (!$w instanceof Level) {
+					$wn = TF::BOLD . TF::DARK_PURPLE . "Unloaded world" . TF::RESET . "\n" . TF::BLUE . "(" . $n . ")" . TF::RESET . TF::RESET;
+				}
+				else {
+					$wn = TF::BOLD . TF::DARK_BLUE . $w->getName() . TF::RESET;
+				}
+				array_push($b, new MenuOption($wn . "\n" . TF::BLUE . "(" . $n . ")" . TF::RESET, new FormIcon("https://i.imgur.com/QT19rOy.jpg", FormIcon::IMAGE_TYPE_URL)));
+				array_push($wl, $n);
+			}
+		}
+		$form = (new MenuForm(TF::BOLD . TF::AQUA . "Wild" . TF::GREEN . "Spawn" . TF::RESET, "",
+			$b,
+			function (Player $p, int $d) use ($wl) : void {
+				switch ($d) {
+
+					case 0:
+						$this->infoForm($p);
+						return;
+						break;
+
+					case 1:
+						return;
+						break;
+
+					case 2:
+						$this->configForm($p);
+						break;
+
+					case 3:
+						$this->searchForm($p);
+						return;
+						break;
+					
+					default:
+						$dc = intval(intval($d) - 4);
+						if (!isset($wl[$dc])) {
+							$p->sendMessage(TF::BOLD . TF::RED . "Plugin unexpected error" . TF::RESET);
+							return;
+						}
+						$this->settingForm($p, $wl[$dc]);
+						return;
+						break;
+				}
+				return;
+			}
+		));
+		$p->sendForm($form);
+	}
+
+	private function searchForm(Player $p, string $c = "", string $ti = TF::BOLD . TF::AQUA . "Search " . TF::GREEN . "world" . TF::RESET) {
+		if (!$p->hasPermission("wildspawn.check")) {
+			$p->sendMessage(TF::BOLD . TF::DARK_RED . "Action forbidden!\n\n" . TF::RED . "You are lacking the permission \"wildspawn.check\" to do this action." . TF::RESET);
+			return;
+		}
+		$form = (new CustomForm($ti,
+			[new Input("input", TF::BOLD . TF::GOLD . "Please enter a keyword of the world name or world folder name: " . "" .  TF::RESET, "Leave here empty to back", $c), new Toggle("clear", TF::AQUA . "Clear search input" . TF::RESET)],
+			function (Player $p, CustomFormResponse $d) : void {
+				if (boolval($d->getBool("clear"))) {
+					$this->searchForm($p);
+					return;
+				}
+				$k = $d->getString("input");
+				if ($k === "") {
+					$this->overviewForm($p);
+					return;
+				}
+				$this->resultForm($p, $k);
+				return;
+			},
+			function (Player $p) : void {
+				$this->overviewForm($p);
+				return;
+			}
+		));
+		$p->sendForm($form);
+	}
+
+	private function resultForm(Player $p, string $k) {
+		if (!$p->hasPermission("wildspawn.check")) {
+			$p->sendMessage(TF::BOLD . TF::DARK_RED . "Action forbidden!\n\n" . TF::RED . "You are lacking the permission \"wildspawn.check\" to do this action." . TF::RESET);
+			return;
+		}
+		$wl = [];
+		$r = [];
+		foreach (scandir($this->getServer()->getDataPath()."worlds") as $n) {
+
+			if ($n === "." || $n === "..") continue;
+			if (stripos($n, $k) !== false) {
+				array_push($r, $n);
+				continue;
+			}
+			$w = $this->getServer()->getLevelByName($n);
+			if (isset($w)) {
+				if (stripos($w->getName(), $k) !== false) {
+					array_push($r, $n);
+					continue;
+				}
+			}
+			continue;
+		}
+		if ($r === []) {
+			$this->searchForm($p, $k, TF::BOLD . TF::DARK_RED . "No result have found!" . TF::RESET);
+			return;
+		}
+		$b = [];
+		$b[0] = (new MenuOption(TF::BOLD . TF::DARK_AQUA . "Search again" . TF::RESET, new FormIcon("https://i.imgur.com/bjMQuxG.png", FormIcon::IMAGE_TYPE_URL)));
+		$b[1] = (new MenuOption(TF::BOLD . TF::DARK_RED . "Back" . TF::RESET, new FormIcon("https://i.imgur.com/vk6IBgP.png", FormIcon::IMAGE_TYPE_URL)));
+		$t = $r;
+		$wl = [];
+		foreach ($t as $n) {
+			$w = $this->getServer()->getLevelByName($n);
+			if (!isset($w)) {
+				array_push($b, new MenuOption(TF::BOLD . TF::DARK_PURPLE . "Unloaded world" . TF::RESET . "\n" . TF::BLUE . "(" . $n . ")" . TF::RESET));
+				array_push($wl, $n);
+			}
+			else {
+				array_push($b, new MenuOption(TF::BOLD . TF::DARK_BLUE . $w->getName() . TF::RESET . "\n" . TF::BLUE . "(" . $n . ")" . TF::RESET));
+				array_push($wl, $n);
+			}
+		}
+		$form = (new MenuForm(TF::BOLD . TF::AQUA . count($wl) . TF::GREEN . " found result" . TF::RESET, "",
+			$b,
+			function (Player $p, int $d) use ($wl, $k) : void {
+				switch ($d) {
+					case 0:
+						$this->searchForm($p, $k);
+						return;
+						break;
+
+					case 1:
+						$this->overviewForm($p);
+						return;
+						break;
+					
+					default:
+						$dc = intval(intval($d) - 2);
+						if (!isset($wl[$dc])) {
+							$this->searchForm($p, $k, TF::BOLD . TF::DARK_RED . "Plugin unexpected error" . TF::RESET);
+							return;
+						}
+						$this->settingForm($p, $wl[$dc]);
+						return;
+						break;
+				}
+				return;
+			},
+			function (Player $p) : void {
+				$this->overviewForm($p);
+				return;
+			}
+		));
+		$p->sendForm($form);
+	}
+
+	private function settingForm(Player $p, string $n, int $adm = 0) {
+		if (!$p->hasPermission("wildspawn.check")) {
+			$p->sendMessage(TF::BOLD . TF::DARK_RED . "Action forbidden!\n\n" . TF::RED . "You are lacking the permission \"wildspawn.check\" to do this action." . TF::RESET);
+			return;
+		}
+		$wn = "Unloaded";
+		$w = $this->getServer()->getLevelByName($n);
+		if (isset($w)) {
+			$wn = $w->getName();
+		}
+		$b = [];
+		$at = TF::BOLD . TF::DARK_RED . "Action forbidden!\n\n" . TF::RED . "You are lacking the permission \"wildspawn.mod\" to do this action." . TF::RESET;
+		if ($adm === 2) {
+			$at = TF::BOLD . TF::GREEN . "All changes have been saved!" . TF::RESET;
+		}
+		$b[0] = (new Label("additional", $at));
+		$b[1] = (new Label("info", TF::BOLD . TF::GOLD . "World: " . TF::RESET. TF::YELLOW . $wn . TF::BOLD . TF::GOLD . "\nFolder: " . TF::RESET . TF::YELLOW . $n . TF::RESET));
+		$b[2] = (new Toggle("enable", TF::AQUA . "Enable wild spawn" . TF::RESET));
+		$b[3] = (new Toggle("display", TF::AQUA . "Display location info after player respawn randomly" . TF::RESET));
+		$b[4] = (new Toggle("vbed", TF::AQUA . "Enable vanilla set spawn feature" . TF::RESET));
+		$b[5] = (new Label("vbed_label", TF::BOLD . TF::DARK_GRAY . "(Able to set spawn via bed at day, reset spawn on bed break...)"));
+		$b[6] = (new Toggle("fjtp", TF::AQUA . "Teleport on player first join" . TF::RESET));
+		$b[7] = (new StepSlider("action", "", [
+			TF::BOLD . TF::RED . "    Cancel" . TF::RESET . TF::DARK_GRAY . " ===> " . TF::GRAY . "Apply" . TF::RESET,
+			TF::GRAY . "    Cancel" . TF::RESET . TF::DARK_GRAY . " <=== " . TF::BOLD . TF::GREEN . "Apply" . TF::RESET
+			]));
+		if ($adm === 0) {
+			unset($b[0]);
+		}
+		if (in_array($n, $this->world)) {
+			$b[2] = (new Toggle("enable", TF::AQUA . "Enable wild spawn" . TF::RESET, true));
+		}
+		if (in_array($n, $this->display)) {
+			$b[3] = (new Toggle("display", TF::AQUA . "Display location info after player respawn randomly" . TF::RESET, true));
+		}
+		if (in_array($n, $this->vbed)) {
+			$b[4] = (new Toggle("vbed", TF::AQUA . "Enable vanilla set spawn feature" . TF::RESET, true));
+		}
+		if (in_array($n, $this->fjtp)) {
+			$b[6] = (new Toggle("fjtp", TF::AQUA . "Teleport on player first join" . TF::RESET, true));
+		}
+		if ($p->hasPermission("wildspawn.mod")) {
+			$b[7] = (new StepSlider("action", "", [
+			TF::BOLD . TF::RED . "    Cancel" . TF::RESET . TF::DARK_GRAY . " ===> " . TF::GRAY . "Apply" . TF::RESET,
+			TF::GRAY . "    Cancel" . TF::RESET . TF::DARK_GRAY . " <=== " . TF::BOLD . TF::GREEN . "Apply" . TF::RESET
+			], 1));	
+		}
+		if ($adm === 2) {
+			$b[7] = (new StepSlider("action", "", [
+			TF::BOLD . TF::RED . "    Cancel" . TF::RESET . TF::DARK_GRAY . " ===> " . TF::GRAY . "Apply" . TF::RESET,
+			TF::GRAY . "    Cancel" . TF::RESET . TF::DARK_GRAY . " <=== " . TF::BOLD . TF::GREEN . "Apply" . TF::RESET
+			]));
+		}
+		$form = (new CustomForm(TF::BOLD . TF::AQUA . "World " . TF::GREEN . "setting" . TF::RESET, $b,
+			function(Player $p, CustomFormResponse $d) use ($n): void {
+				if ($d->getInt("action") == 0) {
+					$this->overviewForm($p);
+					return;
+				}
+				if (!$p->hasPermission("wildspawn.mod")) {
+					$this->settingForm($p, $n, 1);
+					return;
+				}
+				if (boolval($d->getBool("enable"))) {
+					if (!in_array($n, $this->world)) {
+						array_push($this->world, $n);
+					}
+				}
+				else {
+					if (in_array($n, $this->world)) {
+						unset($this->world[array_search($n, $this->world)]);
+					}
+				}
+				$this->config->set("worldMask", $this->world);
+				if (boolval($d->getBool("display"))) {
+					if (!in_array($n, $this->display)) {
+						array_push($this->display, $n);
+					}
+				}
+				else {
+					if (in_array($n, $this->display)) {
+						unset($this->display[array_search($n, $this->display)]);
+					}
+				}
+				$this->config->set("displayLocation", $this->display);
+				if (boolval($d->getBool("vbed"))) {
+					if (!in_array($n, $this->vbed)) {
+						array_push($this->vbed, $n);
+					}
+				}
+				else {
+					if (in_array($n, $this->vbed)) {
+						unset($this->vbed[array_search($n, $this->vbed)]);
+					}
+				}
+				$this->config->set("vanillaBed", $this->vbed);
+				if (boolval($d->getBool("fjtp"))) {
+					if (!in_array($n, $this->fjtp)) {
+						array_push($this->fjtp, $n);
+					}
+				}
+				else {
+					if (in_array($n, $this->fjtp)) {
+						unset($this->fjtp[array_search($n, $this->fjtp)]);
+					}
+				}
+				$this->config->set("firstJoinTp", $this->fjtp);
+				$this->config->save();
+				$this->config->reload();
+				$this->settingForm($p, $n, 2);
+				return;
+			},
+			function(Player $p) : void {
+				$this->overviewForm($p);
+				return;
+			}
+		));
+		$p->sendForm($form);
 	}
 
 	public function getPrefix() : string {return $this->prefix;}
