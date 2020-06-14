@@ -211,7 +211,7 @@ class ThonkingWildSpawn extends pm implements Listener {
 		}
 		$form = (new MenuForm(
 			TF::BOLD . TF::AQUA . "Plugin " . TF::GREEN . "information" . TF::RESET,
-			TF::BOLD . TF::AQUA . "\nThonkingWildSpawn" . TF::RESET . TF::GREEN . "\nBy " . TF::LIGHT_PURPLE . "Enderman" . TF::GREEN . "bugzjfc\n" . TF::RESET . TF::DARK_RED . "\nYou" . TF::WHITE . "Tube: " . TF::BLUE . "\nhttps://www.youtube.com/channel/UCD4OW4HGfWcDpfTvqypyYUw?sub_confirmation=1\n" . TF::GOLD . "\nOmlet: " . TF::BLUE . "\nhttps://omlet.gg/profile/endermanbug_zjfc" . TF::GOLD . "\n\nA random spawn plugin for " . TF::DARK_AQUA . "PM" . TF::YELLOW . "3" . TF::DARK_GRAY . "\n(Tested compatibility on 3.13.0 Build 1807)\n\n" . TF::BOLD . TF::AQUA . "Used libraries / virions: \n" . TF::RESET . TF::WHITE . "- " . TF::GOLD . "PmForms by dktapps\n" . TF::WHITE . "- " . TF::GOLD . "Wildness by muqsit (Source code reference)\n\n" . TF::BOLD . TF::AQUA . "Update details: \n" . TF::RESET . TF::WHITE . "- " . TF::GOLD . "Version: 1.2.0\n" . TF::WHITE . "- " . TF::GOLD . "Optimized wildness teleportation system\n" . TF::WHITE . "- " . TF::GOLD . "Fixed spawnpoint won't be randomize after bed breaks\n" . TF::WHITE . "- " . TF::GOLD . "Added API supports for 3.13.0\n" . TF::RESET,
+			TF::BOLD . TF::AQUA . "\nThonkingWildSpawn" . TF::RESET . TF::GREEN . "\nBy " . TF::LIGHT_PURPLE . "Enderman" . TF::GREEN . "bugzjfc\n" . TF::RESET . TF::DARK_RED . "\nYou" . TF::WHITE . "Tube: " . TF::BLUE . "\nhttps://www.youtube.com/channel/UCD4OW4HGfWcDpfTvqypyYUw?sub_confirmation=1\n" . TF::GOLD . "\nOmlet: " . TF::BLUE . "\nhttps://omlet.gg/profile/endermanbug_zjfc" . TF::GOLD . "\n\nA random spawn plugin for " . TF::DARK_AQUA . "PM" . TF::YELLOW . "3" . TF::DARK_GRAY . "\n(Tested compatibility on 3.13.0 Build 1807)\n\n" . TF::BOLD . TF::AQUA . "Used libraries / virions: \n" . TF::RESET . TF::WHITE . "- " . TF::GOLD . "PmForms by dktapps\n" . TF::WHITE . "- " . TF::GOLD . "Wildness by muqsit (Source code reference)\n\n" . TF::BOLD . TF::AQUA . "Update details: \n" . TF::RESET . TF::WHITE . "- " . TF::GOLD . "Version: 1.2.1\n" . TF::WHITE . "- " . TF::GOLD . "Fixed plugin crash in server that with API version before 3.13\n" . TF::RESET,
 			[new MenuOption(TF::BOLD . TF::DARK_AQUA . "Done" . TF::RESET)],
 			function (Player $p, int $d): void {
 				$this->overviewForm($p);
@@ -359,7 +359,16 @@ class ThonkingWildSpawn extends pm implements Listener {
 		$msg = [0 => $this->popup[0] ?? 20, 1 => $this->popup[1] ?? 20, 2 => $this->popup[2] ?? 20];
 		$msg = [0 => $this->insertion($p, $msg[0], $f), 1 => $this->insertion($p, $msg[1], $f), 2 => $this->insertion($p, $msg[2], $f)];
 		$p->sendMessage(strval($this->insertion($p, $this->tpmsg, $f)));
-		$p->sendTitle(strval($msg[0]), strval($msg[1]), intval($es[0]), intval($es[1]), intval($es[2]));
+		$ver = explode(".", strval($this->getServer()->getVersion()));
+		if (!isset($ver[1])) {
+			throw new \RuntimeException("Unsupported API version.");
+			return;
+		}
+		if (intval($ver[1]) < 13) {
+			$p->addTitle(strval($msg[0]), strval($msg[1]), intval($es[0]), intval($es[1]), intval($es[2]));
+		} else {
+			$p->sendTitle(strval($msg[0]), strval($msg[1]), intval($es[0]), intval($es[1]), intval($es[2]));
+		}
 		$p->sendPopup($msg[2]);
 		return;
 	}
