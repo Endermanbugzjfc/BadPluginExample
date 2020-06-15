@@ -211,7 +211,7 @@ class ThonkingWildSpawn extends pm implements Listener {
 		}
 		$form = (new MenuForm(
 			TF::BOLD . TF::AQUA . "Plugin " . TF::GREEN . "information" . TF::RESET,
-			TF::BOLD . TF::AQUA . "\nThonkingWildSpawn" . TF::RESET . TF::GREEN . "\nBy " . TF::LIGHT_PURPLE . "Enderman" . TF::GREEN . "bugzjfc\n" . TF::RESET . TF::DARK_RED . "\nYou" . TF::WHITE . "Tube: " . TF::BLUE . "\nhttps://www.youtube.com/channel/UCD4OW4HGfWcDpfTvqypyYUw?sub_confirmation=1\n" . TF::GOLD . "\nOmlet: " . TF::BLUE . "\nhttps://omlet.gg/profile/endermanbug_zjfc" . TF::GOLD . "\n\nA random spawn plugin for " . TF::DARK_AQUA . "PM" . TF::YELLOW . "3" . TF::DARK_GRAY . "\n(Tested compatibility on 3.13.0 Build 1807)\n\n" . TF::BOLD . TF::AQUA . "Used libraries / virions: \n" . TF::RESET . TF::WHITE . "- " . TF::GOLD . "PmForms by dktapps\n" . TF::WHITE . "- " . TF::GOLD . "Wildness by muqsit (Source code reference)\n\n" . TF::BOLD . TF::AQUA . "Update details: \n" . TF::RESET . TF::WHITE . "- " . TF::GOLD . "Version: 1.2.1\n" . TF::WHITE . "- " . TF::GOLD . "Fixed plugin crash in server that with API version before 3.13\n" . TF::RESET,
+			TF::BOLD . TF::AQUA . "\nThonkingWildSpawn" . TF::RESET . TF::GREEN . "\nBy " . TF::LIGHT_PURPLE . "Enderman" . TF::GREEN . "bugzjfc\n" . TF::RESET . TF::DARK_RED . "\nYou" . TF::WHITE . "Tube: " . TF::BLUE . "\nhttps://www.youtube.com/channel/UCD4OW4HGfWcDpfTvqypyYUw?sub_confirmation=1\n" . TF::GOLD . "\nOmlet: " . TF::BLUE . "\nhttps://omlet.gg/profile/endermanbug_zjfc" . TF::GOLD . "\n\nA random spawn plugin for " . TF::DARK_AQUA . "PM" . TF::YELLOW . "3" . TF::DARK_GRAY . "\n(Tested compatibility on 3.13.0 Build 1807 and 3.12.6 Build 1806)\n\n" . TF::BOLD . TF::AQUA . "Used libraries / virions: \n" . TF::RESET . TF::WHITE . "- " . TF::GOLD . "PmForms by dktapps\n" . TF::WHITE . "- " . TF::GOLD . "Wildness by muqsit (Source code reference)\n\n" . TF::BOLD . TF::AQUA . "Update details: \n" . TF::RESET . TF::WHITE . "- " . TF::GOLD . "Version: 1.2.2\n" . TF::WHITE . "- " . TF::GOLD . "Fixed plugin still crashes in servers that with API version before 3.13\n" . TF::WHITE . "- " . TF::GOLD . "Added back API version 3.12 supports\n" . TF::WHITE . "- " . TF::GOLD . "Fixed server crashes after the plugin being disabled\n" . RESET,
 			[new MenuOption(TF::BOLD . TF::DARK_AQUA . "Done" . TF::RESET)],
 			function (Player $p, int $d): void {
 				$this->overviewForm($p);
@@ -364,7 +364,7 @@ class ThonkingWildSpawn extends pm implements Listener {
 			throw new \RuntimeException("Unsupported API version.");
 			return;
 		}
-		if (intval($ver[1]) < 13) {
+		if (intval($ver[1]) >= 13) {
 			$p->addTitle(strval($msg[0]), strval($msg[1]), intval($es[0]), intval($es[1]), intval($es[2]));
 		} else {
 			$p->sendTitle(strval($msg[0]), strval($msg[1]), intval($es[0]), intval($es[1]), intval($es[2]));

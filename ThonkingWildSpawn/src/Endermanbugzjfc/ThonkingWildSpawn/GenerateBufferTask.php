@@ -50,6 +50,8 @@ class GenerateBufferTask extends Task {
 
 	public function onRun(int $currentTick) {
 
+		if (!$this->main instanceof Main) return;
+
 		$w = $this->level;
 		$ws = $w->getSpawnLocation();
 		$td = false;
