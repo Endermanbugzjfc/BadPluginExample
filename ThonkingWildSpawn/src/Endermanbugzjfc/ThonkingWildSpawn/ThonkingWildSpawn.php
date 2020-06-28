@@ -59,17 +59,13 @@
 declare(strict_types=1);
 namespace Endermanbugzjfc\ThonkingWildSpawn;
 
-use pocketmine\plugin\PluginBase as pm;
 use pocketmine\{Player};
 use pocketmine\utils\{Config, TextFormat as TF, Terminal as C};
 use pocketmine\command\{Command, CommandSender};
-use pocketmine\event\Listener;
 use pocketmine\block\{Bed};
 use pocketmine\level\{Level, Position as Pos};
 use pocketmine\math\{Vector3, AxisAlignedBB as BB};
 use pocketmine\event\player\{PlayerRespawnEvent, PlayerInteractEvent, PlayerJoinEvent};
-use pocketmine\event\entity\{EntityLevelChangeEvent};
-use pocketmine\event\level\{LevelLoadEvent};
 use pocketmine\event\block\{BlockBreakEvent};
 use pocketmine\network\mcpe\protocol\{ActorEventPacket};
 use pocketmine\item\{Item};
@@ -78,7 +74,7 @@ use Endermanbugzjfc\ThonkingWildSpawn\{GenerateBufferTask as GenBuffer};
 use dktapps\pmforms\{CustomForm,CustomFormResponse, MenuForm, MenuOption, FormIcon, ModalForm};
 use dktapps\pmforms\element\{Dropdown, Input, StepSlider, Toggle, Label};
 
-class ThonkingWildSpawn extends pm implements Listener {
+class ThonkingWildSpawn extends pocketmine\plugin\PluginBase implements pocketmine\event\Listener {
 
 	public function onEnable() {
 		$this->config = (new Config($this->getDataFolder() . "config.yml", Config::YAML));
@@ -123,7 +119,7 @@ class ThonkingWildSpawn extends pm implements Listener {
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
 		$w = $this->getServer()->getDefaultLevel();
 
-		$this->buffer[strval($w->getId())] = $this->getScheduler()->scheduleTask(new GenerateBufferTask($this, $w));
+		$this->getServer()->getAsyncPool()->submitTask(new GenerateBufferTask($this, $w));
 		return;
 
 
@@ -330,8 +326,6 @@ class ThonkingWildSpawn extends pm implements Listener {
 		$ws = $w->getSpawnLocation();
 		$bs = $w->getBlock($ps->asVector3());
 
-		if (!in_array($w->getFolderName(), $this->world)) return false;
-
 		if (!$ps->equals($ws->asVector3())) {
 			if (in_array($w->getFolderName(), $this->vbed)) {
 				if (!$bs instanceof Bed) {
@@ -342,11 +336,12 @@ class ThonkingWildSpawn extends pm implements Listener {
 		}
 
 	    while (!isset($this->buffer[strval($w->getId())])) {
-	    	$this->getScheduler()->scheduleTask(new GenerateBufferTask($this, $w));
+	    	$this->getServer()->getAsyncPool()->submitTask(new GenerateBufferTask($this, $w));
+	    	return false;
 	    }
 	    $eb = $this->buffer[strval($w->getId())];
 	    unset($this->buffer[strval($w->getId())]);
-	    $this->getScheduler()->scheduleTask(new GenerateBufferTask($this, $w));
+	    $this->getServer()->getAsyncPool()->submitTask(new GenerateBufferTask($this, $w));
 
 	    if (!$eb[1]) array_push($this->newchunk, $n);
 	    return $eb[0];
@@ -643,25 +638,37 @@ class ThonkingWildSpawn extends pm implements Listener {
 		$p->sendForm($form);
 	}
 
-	public function wildSpawnWorldLoads(LevelLoadEvent $e) {
+	public function wildSpawnWorldLoads(pocketmine\event\level\{LevelLoadEvent $e) {
 
 		$w = $e->getLevel();
+		if (in_array($w->getFolderName(), $this->world)) return;
+		$this->buffer[strval($w->getId())] = null;
 
-		$this->getScheduler()->scheduleTask(new GenerateBufferTask($this, $w));
+		$this->getServer()->getAsyncPool()->submitTask(new GenerateBufferTask($this, $w));
 		return;
 	}
 
-	public function wildSpawnWorldTp(EntityLevelChangeEvent $e) {
+	public function wildSpawnWorldTp(pocketmine\event\entity\EntityLevelChangeEvent $e) {
 
 		$p = $e->getEntity();
-
 		if (!$p instanceof Player) return;
 		$w = $e->getTarget();
 		$ml = $this->mjoin->get($w->getFolderName());
 		if (in_array($p->getName(), $ml)) return;
+		if (in_array($w->getFolderName(), $this->world)) {
+			array_push($ml, $p->getName());
+			$this->mjoin->set($w->getFolderName(), $ml);
+			$this->mjoin->save();
+			$this->mjoin->reload();
+			return;
+		}
 
 		$f = $this->rtp($p);
-		if (!$f instanceof Pos) return;
+		if (!$f instanceof Pos) {
+			$p->sendMessage($this->prefix . TF::RED . "Your spawnpoint of the target world is still loading, please try again later" . TF::RESET);
+			$e->setCancelled();
+			return;
+		}
 		$p->teleport($f);
 		$this->tpMsg($p, $f);
 		array_push($ml, $p->getName());
@@ -673,8 +680,6 @@ class ThonkingWildSpawn extends pm implements Listener {
 	}
 
 	public function setBuffer(Pos $f, bool $icg, GenBuffer $instance) {
-
-		if (!$instance instanceof GenBuffer) return;
 
 		$this->buffer[strval($f->getLevel()->getId())] = [$f, $icg];
 		return;

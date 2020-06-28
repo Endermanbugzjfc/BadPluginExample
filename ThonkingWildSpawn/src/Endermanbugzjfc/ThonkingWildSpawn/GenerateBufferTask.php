@@ -33,12 +33,12 @@
 declare(strict_types=1);
 namespace Endermanbugzjfc\ThonkingWildSpawn;
 
-use pocketmine\scheduler\{Task};
+use pocketmine\scheduler\{AsyncTask};
 use pocketmine\level\{Level, Position as Pos};
 
 use Endermanbugzjfc\ThonkingWildSpawn\ThonkingWildSpawn as Main;
 
-class GenerateBufferTask extends Task {
+class GenerateBufferTask extends AsyncTask {
 
 	public function __construct(Main $m, Level $w) {
 		$this->main = $m;
